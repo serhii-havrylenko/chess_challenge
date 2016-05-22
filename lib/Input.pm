@@ -20,7 +20,8 @@ Usage:
 HELP
 
 sub new {
-	my ($class) = @_;
+    my $class = shift;
+    $class = ref $class if ref $class;
 
 	return bless {}, $class;
 }
@@ -78,3 +79,5 @@ sub validate_parameters {
 
 	return ( $valid, $err_msg );
 }
+
+1;
