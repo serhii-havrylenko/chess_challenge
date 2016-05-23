@@ -28,12 +28,39 @@ sub init_board {
 	return \@board;
 }
 
+sub is_possible_place_queen {
+	my ( $self, $board, $n, $m ) = @_;
+
+	my $possible = $self->is_possible_place_rook( $board, $n, $m );
+	$possible = $self->is_possible_place_bishop( $board, $n, $m ) if $possible;
+	$possible = $self->is_possible_place_king( $board, $n, $m ) if $possible;
+
+	return $possible;
+}
+
+sub place_queen {
+	my ( $self, $board, $n, $m ) = @_;
+
+	my $possible = $self->is_possible_place_queen( $board, $n, $m );
+	if ($possible) {
+		$self->place_rook( $board , $n, $m );
+		$self->place_bishop( $board , $n, $m );
+		$self->place_king( $board , $n, $m );
+
+		$board->[$n]->[$m] = 'Q';
+
+		return 1;
+	}
+
+	return 0;
+}
+
 sub is_possible_place_bishop {
 	my ( $self, $board, $n, $m ) = @_;
 
 	my $possible = 1;
 	my $j        = 1;
-	for (my $i = $n-1; $i >= 0; $i--) {
+	for ( my $i = $n - 1; $i >= 0; $i-- ) {
 		$possible = 0 if $m - $j >= 0 && $board->[$i]->[ $m - $j ];
 		$possible = 0 if $m + $j <= $self->{horizontal} && $board->[$i]->[ $m + $j ];
 		$j++;
@@ -55,7 +82,7 @@ sub place_bishop {
 	my $possible = $self->is_possible_place_bishop( $board, $n, $m );
 	if ($possible) {
 		my $j = 1;
-		for (my $i = $n-1; $i >= 0; $i--) {
+		for ( my $i = $n - 1; $i >= 0; $i-- ) {
 			$board->[$i]->[ $m - $j ] = '0' if $m - $j >= 0 && !defined $board->[$i]->[ $m - $j ];
 			$board->[$i]->[ $m + $j ] = '0' if $m + $j <= $self->{horizontal} && !defined $board->[$i]->[ $m + $j ];
 			$j++;
@@ -185,7 +212,16 @@ sub place_figures {
 			my $local_figures = clone($figures);
 			my $local_board   = clone($board);
 
-			if ( $figures->{rook} && $figures->{rook} > 0 ) {
+            if ( $figures->{queen} && $figures->{queen} > 0 ) {
+                my $added = $self->place_queen( $local_board, $n, $m );
+
+                if ($added) {
+                    $local_figures->{queen}--;
+                    $self->place_figures( $local_figures, $local_board )
+                        if ( $self->exist_figures($local_figures) );
+                }
+            }
+            elsif ( $figures->{rook} && $figures->{rook} > 0 ) {
 				my $added = $self->place_rook( $local_board, $n, $m );
 
 				if ($added) {
@@ -194,7 +230,7 @@ sub place_figures {
 						if ( $self->exist_figures($local_figures) );
 				}
 			}
-            elsif ( $figures->{bishop} && $figures->{bishop} > 0 ) {
+			elsif ( $figures->{bishop} && $figures->{bishop} > 0 ) {
 				my $added = $self->place_bishop( $local_board, $n, $m );
 
 				if ($added) {
