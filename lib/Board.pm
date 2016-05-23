@@ -28,6 +28,54 @@ sub init_board {
 	return \@board;
 }
 
+sub is_possible_place_bishop {
+	my ( $self, $board, $n, $m ) = @_;
+
+	my $possible = 1;
+	my $j        = 1;
+	for (my $i = $n-1; $i >= 0; $i--) {
+		$possible = 0 if $m - $j >= 0 && $board->[$i]->[ $m - $j ];
+		$possible = 0 if $m + $j <= $self->{horizontal} && $board->[$i]->[ $m + $j ];
+		$j++;
+	}
+
+	$j = 1;
+	foreach my $i ( $n + 1 .. $self->{vertical} ) {
+		$possible = 0 if $m - $j >= 0 && $board->[$i]->[ $m - $j ];
+		$possible = 0 if $m + $j <= $self->{horizontal} && $board->[$i]->[ $m + $j ];
+		$j++;
+	}
+
+	return $possible;
+}
+
+sub place_bishop {
+	my ( $self, $board, $n, $m ) = @_;
+
+	my $possible = $self->is_possible_place_bishop( $board, $n, $m );
+	if ($possible) {
+		my $j = 1;
+		for (my $i = $n-1; $i >= 0; $i--) {
+			$board->[$i]->[ $m - $j ] = '0' if $m - $j >= 0 && !defined $board->[$i]->[ $m - $j ];
+			$board->[$i]->[ $m + $j ] = '0' if $m + $j <= $self->{horizontal} && !defined $board->[$i]->[ $m + $j ];
+			$j++;
+		}
+
+		$j = 1;
+		foreach my $i ( $n + 1 .. $self->{vertical} ) {
+			$board->[$i]->[ $m - $j ] = '0' if $m - $j >= 0 && !defined $board->[$i]->[ $m - $j ];
+			$board->[$i]->[ $m + $j ] = '0' if $m + $j <= $self->{horizontal} && !defined $board->[$i]->[ $m + $j ];
+			$j++;
+		}
+
+		$board->[$n]->[$m] = 'B';
+
+		return 1;
+	}
+
+	return 0;
+}
+
 sub is_possible_place_rook {
 	my ( $self, $board, $n, $m ) = @_;
 
@@ -46,8 +94,8 @@ sub is_possible_place_rook {
 sub place_rook {
 	my ( $self, $board, $n, $m ) = @_;
 
-	# my $possible = $self->is_possible_place_rook( $board, $n, $m );
-	unless ( defined $board->[$n]->[$m] ) {
+	my $possible = $self->is_possible_place_rook( $board, $n, $m );
+	if ($possible) {
 		foreach my $i ( 0 .. $self->{horizontal} ) {
 			$board->[$n]->[$i] = '0' unless defined $board->[$n]->[$i];
 		}
@@ -146,6 +194,15 @@ sub place_figures {
 						if ( $self->exist_figures($local_figures) );
 				}
 			}
+            elsif ( $figures->{bishop} && $figures->{bishop} > 0 ) {
+				my $added = $self->place_bishop( $local_board, $n, $m );
+
+				if ($added) {
+					$local_figures->{bishop}--;
+					$self->place_figures( $local_figures, $local_board )
+						if ( $self->exist_figures($local_figures) );
+				}
+			}
 			elsif ( $figures->{king} && $figures->{king} > 0 ) {
 				my $added = $self->place_king( $local_board, $n, $m );
 
@@ -169,10 +226,10 @@ sub write_output {
 	my ($self) = @_;
 
 	foreach my $board ( @{ $self->{results} } ) {
-		print "|-" . join( '|-', map {'-'} 0 .. $self->{horizontal} ) . "-|\n";
+		print "__" . join( '__', map {'_'} 0 .. $self->{horizontal} ) . "__\n";
 		map {
 			print "| " . join( '| ', map { $_ || ' ' } @$_ ) . " |\n";
-			print "|_" . join( '__', map {'-'} 0 .. $self->{horizontal} ) . "_|\n"
+			print "|_" . join( '__', map {'_'} 0 .. $self->{horizontal} ) . "_|\n"
 		} @$board;
 
 		print "\n\n";
