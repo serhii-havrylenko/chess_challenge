@@ -4,7 +4,6 @@ use strict;
 use warnings;
 
 use Data::Dumper;
-use Data::Compare;
 use Clone 'clone';
 
 sub new {
@@ -35,7 +34,7 @@ sub is_possible_place_queen {
 	$possible = $self->is_possible_place_bishop( $board, $n, $m ) if $possible;
 	$possible = $self->is_possible_place_king( $board, $n, $m ) if $possible;
 
-	return $possible;
+	return 1;
 }
 
 sub place_queen {
@@ -58,21 +57,19 @@ sub place_queen {
 sub is_possible_place_knight {
 	my ( $self, $board, $n, $m ) = @_;
 
-	my $possible = 1;
+	return 0 if $n - 2 >= 0 && $m - 1 >= 0 && $board->[ $n - 2 ]->[ $m - 1 ];
+	return 0 if $n - 2 >= 0 && $m + 1 <= $self->{horizontal} && $board->[ $n - 2 ]->[ $m + 1 ];
 
-	$possible = 0 if $n - 2 >= 0 && $m - 1 >= 0 && $board->[ $n - 2 ]->[ $m - 1 ];
-	$possible = 0 if $n - 2 >= 0 && $m + 1 <= $self->{horizontal} && $board->[ $n - 2 ]->[ $m + 1 ];
+	return 0 if $n - 1 >= 0 && $m - 2 >= 0 && $board->[ $n - 1 ]->[ $m - 2 ];
+	return 0 if $n - 1 >= 0 && $m + 2 <= $self->{horizontal} && $board->[ $n - 1 ]->[ $m + 2 ];
 
-	$possible = 0 if $n - 1 >= 0 && $m - 2 >= 0 && $board->[ $n - 1 ]->[ $m - 2 ];
-	$possible = 0 if $n - 1 >= 0 && $m + 2 <= $self->{horizontal} && $board->[ $n - 1 ]->[ $m + 2 ];
+	return 0 if $n + 1 <= $self->{vertical} && $m - 2 >= 0 && $board->[ $n + 1 ]->[ $m - 2 ];
+	return 0 if $n + 1 <= $self->{vertical} && $m + 2 <= $self->{horizontal} && $board->[ $n + 1 ]->[ $m + 2 ];
 
-	$possible = 0 if $n + 1 <= $self->{vertical} && $m - 2 >= 0 && $board->[ $n + 1 ]->[ $m - 2 ];
-	$possible = 0 if $n + 1 <= $self->{vertical} && $m + 2 <= $self->{horizontal} && $board->[ $n + 1 ]->[ $m + 2 ];
+	return 0 if $n + 2 <= $self->{vertical} && $m - 1 >= 0 && $board->[ $n + 2 ]->[ $m - 1 ];
+	return 0 if $n + 2 <= $self->{vertical} && $m + 1 <= $self->{horizontal} && $board->[ $n + 2 ]->[ $m + 1 ];
 
-	$possible = 0 if $n + 2 <= $self->{vertical} && $m - 1 >= 0 && $board->[ $n + 2 ]->[ $m - 1 ];
-	$possible = 0 if $n + 2 <= $self->{vertical} && $m + 1 <= $self->{horizontal} && $board->[ $n + 2 ]->[ $m + 1 ];
-
-	return $possible;
+	return 1;
 }
 
 sub place_knight {
@@ -109,22 +106,21 @@ sub place_knight {
 sub is_possible_place_bishop {
 	my ( $self, $board, $n, $m ) = @_;
 
-	my $possible = 1;
-	my $j        = 1;
+	my $j = 1;
 	for ( my $i = $n - 1; $i >= 0; $i-- ) {
-		$possible = 0 if $m - $j >= 0 && $board->[$i]->[ $m - $j ];
-		$possible = 0 if $m + $j <= $self->{horizontal} && $board->[$i]->[ $m + $j ];
+		return 0 if $m - $j >= 0 && $board->[$i]->[ $m - $j ];
+		return 0 if $m + $j <= $self->{horizontal} && $board->[$i]->[ $m + $j ];
 		$j++;
 	}
 
 	$j = 1;
 	foreach my $i ( $n + 1 .. $self->{vertical} ) {
-		$possible = 0 if $m - $j >= 0 && $board->[$i]->[ $m - $j ];
-		$possible = 0 if $m + $j <= $self->{horizontal} && $board->[$i]->[ $m + $j ];
+		return 0 if $m - $j >= 0 && $board->[$i]->[ $m - $j ];
+		return 0 if $m + $j <= $self->{horizontal} && $board->[$i]->[ $m + $j ];
 		$j++;
 	}
 
-	return $possible;
+	return 1;
 }
 
 sub place_bishop {
@@ -157,16 +153,15 @@ sub place_bishop {
 sub is_possible_place_rook {
 	my ( $self, $board, $n, $m ) = @_;
 
-	my $possible = 1;
 	foreach my $i ( 0 .. $self->{horizontal} ) {
-		$possible = 0 if $board->[$n]->[$i];
+		return 0 if $board->[$n]->[$i];
 	}
 
 	foreach my $i ( 0 .. $self->{vertical} ) {
-		$possible = 0 if $board->[$i]->[$m];
+		return 0 if $board->[$i]->[$m];
 	}
 
-	return $possible;
+	return 1;
 }
 
 sub place_rook {
@@ -193,34 +188,32 @@ sub place_rook {
 sub is_possible_place_king {
 	my ( $self, $board, $n, $m ) = @_;
 
-	my $possible = 1;
-
 	if ( $n > 0 && $m > 0 && $board->[ $n - 1 ]->[ $m - 1 ] ) {
-		$possible = 0;
+		return 0;
 	}
 	if ( $n > 0 && $board->[ $n - 1 ]->[$m] ) {
-		$possible = 0;
+		return 0;
 	}
 	if ( $n > 0 && $m < $self->{horizontal} && $board->[ $n - 1 ]->[ $m + 1 ] ) {
-		$possible = 0;
+		return 0;
 	}
 	if ( $m > 0 && $board->[$n]->[ $m - 1 ] ) {
-		$possible = 0;
+		return 0;
 	}
 	if ( $m < $self->{horizontal} && $board->[$n]->[ $m + 1 ] ) {
-		$possible = 0;
+		return 0;
 	}
 	if ( $n < $self->{vertical} && $m > 0 && $board->[ $n + 1 ]->[ $m - 1 ] ) {
-		$possible = 0;
+		return 0;
 	}
 	if ( $n < $self->{vertical} && $board->[ $n + 1 ]->[$m] ) {
-		$possible = 0;
+		return 0;
 	}
 	if ( $n < $self->{vertical} && $m < $self->{horizontal} && $board->[ $n + 1 ]->[ $m + 1 ] ) {
-		$possible = 0;
+		return 0;
 	}
 
-	return $possible;
+	return 1;
 }
 
 sub place_king {
@@ -256,7 +249,7 @@ sub exist_figures {
 sub place_figures {
 	my ( $self, $figures, $board ) = @_;
 
-	foreach my $n ( 0 .. $self->{vertical} ) {
+PLACE_FIGURES: foreach my $n ( 0 .. $self->{vertical} ) {
 		foreach my $m ( 0 .. $self->{horizontal} ) {
 			next if $board->[$n]->[$m] || defined $board->[$n]->[$m];
 
@@ -311,28 +304,50 @@ sub place_figures {
 
 			# save board and return
 			unless ( $self->exist_figures($local_figures) ) {
-				push @{ $self->{results} }, $local_board
-					unless grep { Compare( $_, $local_board ) } @{ $self->{results} };
+                my $board_str = $self->write_board($local_board);
+				unless ( grep { $_ eq $board_str } @{ $self->{results} } ) {
+                    print $board_str;
+					push @{ $self->{results} }, $board_str;
+				}
+
+				last PLACE_FIGURES;
 			}
 		}
 	}
 }
 
+sub write_board {
+	my ( $self, $board ) = @_;
+
+	my $str = "__" . join( '__', map {'_'} 0 .. $self->{horizontal} ) . "__\n";
+	map {
+		$str .= "| " . join( '| ', map { $_ || ' ' } @$_ ) . " |\n";
+		$str .= "|_" . join( '__', map {'_'} 0 .. $self->{horizontal} ) . "_|\n"
+	} @$board;
+
+	$str .= "\n\n";
+
+	return $str;
+}
+
 sub write_output {
 	my ($self) = @_;
 
-	foreach my $board ( @{ $self->{results} } ) {
-		print "__" . join( '__', map {'_'} 0 .. $self->{horizontal} ) . "__\n";
-		map {
-			print "| " . join( '| ', map { $_ || ' ' } @$_ ) . " |\n";
-			print "|_" . join( '__', map {'_'} 0 .. $self->{horizontal} ) . "_|\n"
-		} @$board;
+	# foreach my $board ( @{ $self->{results} } ) {
+	# 	print "__" . join( '__', map {'_'} 0 .. $self->{horizontal} ) . "__\n";
+	# 	map {
+	# 		print "| " . join( '| ', map { $_ || ' ' } @$_ ) . " |\n";
+	# 		print "|_" . join( '__', map {'_'} 0 .. $self->{horizontal} ) . "_|\n"
+	# 	} @$board;
+	#
+	# 	print "\n\n";
+	# }
+	open my $fh, '>', 'result.txt' or croak('Cannot open results file');
+	print $fh join( '', @{ $self->{results} } );
+	close $fh;
 
-		print "\n\n";
-	}
-
-	print "Number of combinations: " . ( $#{ $self->{results} } + 1 ) . "\n\n"
-
+	print "Combination can be foung in result.txt file\n";
+	print "Number of combinations: " . ( $#{ $self->{results} } + 1 ) . "\n\n";
 }
 
 1;
