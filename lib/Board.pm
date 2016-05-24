@@ -43,11 +43,62 @@ sub place_queen {
 
 	my $possible = $self->is_possible_place_queen( $board, $n, $m );
 	if ($possible) {
-		$self->place_rook( $board , $n, $m );
-		$self->place_bishop( $board , $n, $m );
-		$self->place_king( $board , $n, $m );
+		$self->place_rook( $board, $n, $m );
+		$self->place_bishop( $board, $n, $m );
+		$self->place_king( $board, $n, $m );
 
 		$board->[$n]->[$m] = 'Q';
+
+		return 1;
+	}
+
+	return 0;
+}
+
+sub is_possible_place_knight {
+	my ( $self, $board, $n, $m ) = @_;
+
+	my $possible = 1;
+
+	$possible = 0 if $n - 2 >= 0 && $m - 1 >= 0 && $board->[ $n - 2 ]->[ $m - 1 ];
+	$possible = 0 if $n - 2 >= 0 && $m + 1 <= $self->{horizontal} && $board->[ $n - 2 ]->[ $m + 1 ];
+
+	$possible = 0 if $n - 1 >= 0 && $m - 2 >= 0 && $board->[ $n - 1 ]->[ $m - 2 ];
+	$possible = 0 if $n - 1 >= 0 && $m + 2 <= $self->{horizontal} && $board->[ $n - 1 ]->[ $m + 2 ];
+
+	$possible = 0 if $n + 1 <= $self->{vertical} && $m - 2 >= 0 && $board->[ $n + 1 ]->[ $m - 2 ];
+	$possible = 0 if $n + 1 <= $self->{vertical} && $m + 2 <= $self->{horizontal} && $board->[ $n + 1 ]->[ $m + 2 ];
+
+	$possible = 0 if $n + 2 <= $self->{vertical} && $m - 1 >= 0 && $board->[ $n + 2 ]->[ $m - 1 ];
+	$possible = 0 if $n + 2 <= $self->{vertical} && $m + 1 <= $self->{horizontal} && $board->[ $n + 2 ]->[ $m + 1 ];
+
+	return $possible;
+}
+
+sub place_knight {
+	my ( $self, $board, $n, $m ) = @_;
+
+	my $possible = $self->is_possible_place_knight( $board, $n, $m );
+	if ($possible) {
+		$board->[ $n - 2 ]->[ $m - 1 ] = '0' if $n - 2 >= 0 && $m - 1 >= 0 && !defined $board->[ $n - 2 ]->[ $m - 1 ];
+		$board->[ $n - 2 ]->[ $m + 1 ] = '0'
+			if $n - 2 >= 0 && $m + 1 <= $self->{horizontal} && !defined $board->[ $n - 2 ]->[ $m + 1 ];
+
+		$board->[ $n - 1 ]->[ $m - 2 ] = '0' if $n - 1 >= 0 && $m - 2 >= 0 && !defined $board->[ $n - 1 ]->[ $m - 2 ];
+		$board->[ $n - 1 ]->[ $m + 2 ] = '0'
+			if $n - 1 >= 0 && $m + 2 <= $self->{horizontal} && !defined $board->[ $n - 1 ]->[ $m + 2 ];
+
+		$board->[ $n + 1 ]->[ $m - 2 ] = '0'
+			if $n + 1 <= $self->{vertical} && $m - 2 >= 0 && !defined $board->[ $n + 1 ]->[ $m - 2 ];
+		$board->[ $n + 1 ]->[ $m + 2 ] = '0'
+			if $n + 1 <= $self->{vertical} && $m + 2 <= $self->{horizontal} && !defined $board->[ $n + 1 ]->[ $m + 2 ];
+
+		$board->[ $n + 2 ]->[ $m - 1 ] = '0'
+			if $n + 2 <= $self->{vertical} && $m - 1 >= 0 && !defined $board->[ $n + 2 ]->[ $m - 1 ];
+		$board->[ $n + 2 ]->[ $m + 1 ] = '0'
+			if $n + 2 <= $self->{vertical} && $m + 1 <= $self->{horizontal} && !defined $board->[ $n + 2 ]->[ $m + 1 ];
+
+		$board->[$n]->[$m] = 'N';
 
 		return 1;
 	}
@@ -212,16 +263,16 @@ sub place_figures {
 			my $local_figures = clone($figures);
 			my $local_board   = clone($board);
 
-            if ( $figures->{queen} && $figures->{queen} > 0 ) {
-                my $added = $self->place_queen( $local_board, $n, $m );
+			if ( $figures->{queen} && $figures->{queen} > 0 ) {
+				my $added = $self->place_queen( $local_board, $n, $m );
 
-                if ($added) {
-                    $local_figures->{queen}--;
-                    $self->place_figures( $local_figures, $local_board )
-                        if ( $self->exist_figures($local_figures) );
-                }
-            }
-            elsif ( $figures->{rook} && $figures->{rook} > 0 ) {
+				if ($added) {
+					$local_figures->{queen}--;
+					$self->place_figures( $local_figures, $local_board )
+						if ( $self->exist_figures($local_figures) );
+				}
+			}
+			elsif ( $figures->{rook} && $figures->{rook} > 0 ) {
 				my $added = $self->place_rook( $local_board, $n, $m );
 
 				if ($added) {
@@ -235,6 +286,15 @@ sub place_figures {
 
 				if ($added) {
 					$local_figures->{bishop}--;
+					$self->place_figures( $local_figures, $local_board )
+						if ( $self->exist_figures($local_figures) );
+				}
+			}
+			elsif ( $figures->{knight} && $figures->{knight} > 0 ) {
+				my $added = $self->place_knight( $local_board, $n, $m );
+
+				if ($added) {
+					$local_figures->{knight}--;
 					$self->place_figures( $local_figures, $local_board )
 						if ( $self->exist_figures($local_figures) );
 				}
@@ -270,6 +330,8 @@ sub write_output {
 
 		print "\n\n";
 	}
+
+	print "Number of combinations: " . ( $#{ $self->{results} } + 1 ) . "\n\n"
 
 }
 
