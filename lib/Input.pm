@@ -17,6 +17,7 @@ Usage:
 		-b|--bishop NUMBER       - number of bishop's pieces on the board
 		-r|--rook NUMBER         - number of rook's pieces on the board
 		-h|--knight NUMBER       - number of knight's pieces on the board
+        -d|--debug               - debug mode + print results to STDOUT
 HELP
 
 sub new {
@@ -37,6 +38,7 @@ sub parse_input {
 		bishop     => undef,
 		rook       => undef,
 		knight     => undef,
+        debug      => undef,
 	);
 
 	GetOptions(
@@ -47,6 +49,7 @@ sub parse_input {
 		"b|bishop=i"     => \$params{bishop},
 		"r|rook=i"       => \$params{rook},
 		"h|knight=i"     => \$params{knight},
+        "d|debug"        => \$params{debug},
 	) or croak($usage);
 
 	my ( $valid, $err_msg ) = $self->validate_parameters( \%params );
