@@ -2,9 +2,15 @@ package Board;
 
 use strict;
 use warnings;
+use threads;
+use threads::shared;
 
+use Digest::MD5 qw(md5);
+use List::MoreUtils qw(uniq);
 use Data::Dumper;
 use Clone 'clone';
+
+my @results : shared;
 
 sub new {
 	my ( $class, $args ) = @_;
@@ -30,7 +36,8 @@ sub init_board {
 sub is_possible_place_queen {
 	my ( $self, $board, $n, $m ) = @_;
 
-	my $possible = $self->is_possible_place_rook( $board, $n, $m );
+	my $possible = 1;
+	$possible = $self->is_possible_place_rook( $board, $n, $m ) if $possible;
 	$possible = $self->is_possible_place_bishop( $board, $n, $m ) if $possible;
 	$possible = $self->is_possible_place_king( $board, $n, $m ) if $possible;
 
@@ -246,6 +253,35 @@ sub exist_figures {
 	return grep { $figures->{$_} && $figures->{$_} > 0 } qw/king queen bishop rook knight/;
 }
 
+sub place_all_figures {
+	my ( $self, $figures, $board ) = @_;
+
+	$self->place_figures( $figures, $board );
+
+    threads->create(
+		sub {
+			sleep(1);
+			while (1) {
+				do { lock @results; @results = uniq @results; };
+				threads->exit(0) if threads->list(threads::running) < 2;
+
+				sleep(10);
+			}
+		}
+	)->join();
+
+WAIT_THREADS: while (1) {
+		my $threads = threads->list(threads::running);
+		if ( $threads == 0 ) {
+			my @threads = threads->list();
+			$_->detach() foreach @threads;
+
+			last WAIT_THREADS;
+		}
+		sleep(1);
+	}
+}
+
 sub place_figures {
 	my ( $self, $figures, $board ) = @_;
 
@@ -255,14 +291,15 @@ PLACE_FIGURES: foreach my $n ( 0 .. $self->{vertical} ) {
 
 			my $local_figures = clone($figures);
 			my $local_board   = clone($board);
+			my $run_deeply    = 0;
 
 			if ( $figures->{queen} && $figures->{queen} > 0 ) {
 				my $added = $self->place_queen( $local_board, $n, $m );
 
 				if ($added) {
 					$local_figures->{queen}--;
-					$self->place_figures( $local_figures, $local_board )
-						if ( $self->exist_figures($local_figures) );
+					$local_figures->{placed}++;
+					$run_deeply = 1;
 				}
 			}
 			elsif ( $figures->{rook} && $figures->{rook} > 0 ) {
@@ -270,8 +307,8 @@ PLACE_FIGURES: foreach my $n ( 0 .. $self->{vertical} ) {
 
 				if ($added) {
 					$local_figures->{rook}--;
-					$self->place_figures( $local_figures, $local_board )
-						if ( $self->exist_figures($local_figures) );
+					$local_figures->{placed}++;
+					$run_deeply = 1;
 				}
 			}
 			elsif ( $figures->{bishop} && $figures->{bishop} > 0 ) {
@@ -279,8 +316,8 @@ PLACE_FIGURES: foreach my $n ( 0 .. $self->{vertical} ) {
 
 				if ($added) {
 					$local_figures->{bishop}--;
-					$self->place_figures( $local_figures, $local_board )
-						if ( $self->exist_figures($local_figures) );
+					$local_figures->{placed}++;
+					$run_deeply = 1;
 				}
 			}
 			elsif ( $figures->{knight} && $figures->{knight} > 0 ) {
@@ -288,8 +325,8 @@ PLACE_FIGURES: foreach my $n ( 0 .. $self->{vertical} ) {
 
 				if ($added) {
 					$local_figures->{knight}--;
-					$self->place_figures( $local_figures, $local_board )
-						if ( $self->exist_figures($local_figures) );
+					$local_figures->{placed}++;
+					$run_deeply = 1;
 				}
 			}
 			elsif ( $figures->{king} && $figures->{king} > 0 ) {
@@ -297,23 +334,32 @@ PLACE_FIGURES: foreach my $n ( 0 .. $self->{vertical} ) {
 
 				if ($added) {
 					$local_figures->{king}--;
-					$self->place_figures( $local_figures, $local_board )
-						if ( $self->exist_figures($local_figures) );
+					$local_figures->{placed}++;
+					$run_deeply = 1;
+				}
+			}
+
+			if ($run_deeply) {
+				if ( $local_figures->{placed} < 2 && threads->list() < 50 && $self->exist_figures($local_figures) ) {
+					threads->create( sub { $self->place_figures( $local_figures, $local_board ) } );
+				}
+				elsif ( $self->exist_figures($local_figures) ) {
+					$self->place_figures( $local_figures, $local_board );
 				}
 			}
 
 			# save board and return
 			unless ( $self->exist_figures($local_figures) ) {
-                my $board_str = $self->write_board($local_board);
-				unless ( grep { $_ eq $board_str } @{ $self->{results} } ) {
-                    print $board_str;
-					push @{ $self->{results} }, $board_str;
-				}
+				my $board_str = $self->write_board($local_board);
+				lock @results;
+
+				push @results, $board_str;
 
 				last PLACE_FIGURES;
 			}
 		}
 	}
+
 }
 
 sub write_board {
@@ -327,27 +373,15 @@ sub write_board {
 
 	$str .= "\n\n";
 
-	return $str;
+	return md5($str);
 }
 
 sub write_output {
 	my ($self) = @_;
 
-	# foreach my $board ( @{ $self->{results} } ) {
-	# 	print "__" . join( '__', map {'_'} 0 .. $self->{horizontal} ) . "__\n";
-	# 	map {
-	# 		print "| " . join( '| ', map { $_ || ' ' } @$_ ) . " |\n";
-	# 		print "|_" . join( '__', map {'_'} 0 .. $self->{horizontal} ) . "_|\n"
-	# 	} @$board;
-	#
-	# 	print "\n\n";
-	# }
-	open my $fh, '>', 'result.txt' or croak('Cannot open results file');
-	print $fh join( '', @{ $self->{results} } );
-	close $fh;
+	@results = uniq @results;
 
-	print "Combination can be foung in result.txt file\n";
-	print "Number of combinations: " . ( $#{ $self->{results} } + 1 ) . "\n\n";
+	print "Number of combinations: " . ( $#results + 1 ) . "\n\n";
 }
 
 1;

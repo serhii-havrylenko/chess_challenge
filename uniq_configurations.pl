@@ -11,13 +11,10 @@ use Data::Dumper;
 
 my $args = Input->new->parse_input;
 
-warn Dumper $args;
-
 my $board_obj = Board->new($args);
 my $board     = $board_obj->init_board($args);
 my $figures   = { map { $_ => $args->{$_} } qw/king queen bishop rook knight/ };
 
-$board_obj->place_figures( $figures, $board );
+$board_obj->place_all_figures( $figures, $board );
 
 $board_obj->write_output;
-# warn Dumper $board;
