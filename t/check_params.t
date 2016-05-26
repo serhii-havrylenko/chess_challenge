@@ -3,13 +3,18 @@
 use strict;
 use warnings;
 
-use Test::More tests => 16;
+use FindBin;
+use lib "$FindBin::Bin/../lib";
+
+use Test::More tests => 17;
 
 require_ok('Input');
 
 my $input = Input->new;
 
 is( ref $input, 'Input', 'Package name is Input' );
+
+can_ok('Input', qw/parse_input validate_parameters/);
 
 my ( $valid, $err_msg ) = $input->validate_parameters( { vertical => 1, horizontal => 2, king => 3, } );
 ok( $valid, 'Params validated' );
@@ -41,6 +46,7 @@ is_deeply(
 		bishop     => undef,
 		rook       => undef,
 		knight     => undef,
+		debug      => undef,
 	},
 	'Params parsed deeply'
 );
@@ -59,6 +65,7 @@ is_deeply(
 		bishop     => undef,
 		rook       => undef,
 		knight     => undef,
+		debug      => undef,
 	},
 	'Params parsed deeply'
 );
@@ -77,6 +84,7 @@ is_deeply(
 		bishop     => 5,
 		rook       => 6,
 		knight     => 7,
+		debug      => undef,
 	},
 	'Params parsed deeply'
 );

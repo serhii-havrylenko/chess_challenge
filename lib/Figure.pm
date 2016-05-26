@@ -14,8 +14,8 @@ sub new {
 		rook       => $args->{rook},
 		bishop     => $args->{bishop},
 		knight     => $args->{knight},
-		horizontal => $args->{horizontal}-1,
-		vertical   => $args->{vertical}-1,
+		horizontal => $args->{horizontal} - 1,
+		vertical   => $args->{vertical} - 1,
 		placed     => 0,
 	}, $class;
 	$self;
@@ -41,7 +41,7 @@ sub place_figure {
 				$self->{$figure}--;
 				$self->{placed}++;
 				$run_deeply = 1;
-                last;
+				last;
 			}
 		}
 	}
@@ -52,12 +52,14 @@ sub place_figure {
 sub is_possible_place_queen {
 	my ( $self, $n, $m ) = @_;
 
+    return 0 if $self->{board}->[$n]->[$m] || defined $self->{board}->[$n]->[$m];
+
 	my $possible = 1;
 	$possible = $self->is_possible_place_rook( $n, $m ) if $possible;
 	$possible = $self->is_possible_place_bishop( $n, $m ) if $possible;
 	$possible = $self->is_possible_place_king( $n, $m ) if $possible;
 
-	return 1;
+	return $possible;
 }
 
 sub place_queen {
@@ -79,6 +81,8 @@ sub place_queen {
 
 sub is_possible_place_knight {
 	my ( $self, $n, $m ) = @_;
+
+	return 0 if $self->{board}->[$n]->[$m] || defined $self->{board}->[$n]->[$m];
 
 	return 0 if $n - 2 >= 0 && $m - 1 >= 0 && $self->{board}->[ $n - 2 ]->[ $m - 1 ];
 	return 0 if $n - 2 >= 0 && $m + 1 <= $self->{horizontal} && $self->{board}->[ $n - 2 ]->[ $m + 1 ];
@@ -135,6 +139,8 @@ sub place_knight {
 sub is_possible_place_bishop {
 	my ( $self, $n, $m ) = @_;
 
+	return 0 if $self->{board}->[$n]->[$m] || defined $self->{board}->[$n]->[$m];
+
 	my $j = 1;
 	for ( my $i = $n - 1; $i >= 0; $i-- ) {
 		return 0 if $m - $j >= 0 && $self->{board}->[$i]->[ $m - $j ];
@@ -184,6 +190,8 @@ sub place_bishop {
 sub is_possible_place_rook {
 	my ( $self, $n, $m ) = @_;
 
+	return 0 if $self->{board}->[$n]->[$m] || defined $self->{board}->[$n]->[$m];
+
 	foreach my $i ( 0 .. $self->{horizontal} ) {
 		return 0 if $self->{board}->[$n]->[$i];
 	}
@@ -218,6 +226,8 @@ sub place_rook {
 
 sub is_possible_place_king {
 	my ( $self, $n, $m ) = @_;
+
+	return 0 if $self->{board}->[$n]->[$m] || defined $self->{board}->[$n]->[$m];
 
 	if ( $n > 0 && $m > 0 && $self->{board}->[ $n - 1 ]->[ $m - 1 ] ) {
 		return 0;
