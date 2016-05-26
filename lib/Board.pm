@@ -80,11 +80,11 @@ sub place_figures {
 		foreach my $m ( 0 .. $self->{horizontal} ) {
 			next if $board->[$n]->[$m] || defined $board->[$n]->[$m];
 
-			my $local_figures_obj = clone($figure_obj);
-			my $local_board       = clone($board);
-			$local_figures_obj->set_board($local_board);
+			# my $local_figures_obj = clone($figure_obj);
+			# my $local_board       = clone($board);
+			# $local_figures_obj->set_board($local_board);
 
-			my $run_deeply = $local_figures_obj->place_figure( $n, $m );
+			my ( $run_deeply, $local_figures_obj, $local_board ) = $figure_obj->place_figure( $n, $m );
 
 			if ($run_deeply) {
 				if (   $local_figures_obj->{placed} < 2

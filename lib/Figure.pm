@@ -3,6 +3,8 @@ package Figure;
 use strict;
 use warnings;
 
+use Clone 'clone';
+
 sub new {
 	my ( $class, $board, $args ) = @_;
 	$class = ref $class if ref $class;
@@ -30,29 +32,38 @@ sub set_board {
 sub place_figure {
 	my ( $self, $n, $m ) = @_;
 
-	my ( $run_deeply, $added );
+	my ( $local_figures_obj, $local_board, $run_deeply, $added ) = ( $self, $self->{board} );
 
 	foreach my $figure (qw/queen rook bishop knight king/) {
 		if ( $self->{$figure} && $self->{$figure} > 0 ) {
-			my $method = 'place_' . $figure;
-			my $added = $self->$method( $n, $m );
+			my $method    = 'place_' . $figure;
+			my $is_method = 'is_possible_place_' . $figure;
 
-			if ($added) {
-				$self->{$figure}--;
-				$self->{placed}++;
-				$run_deeply = 1;
-				last;
+			if ( $self->$is_method( $n, $m ) ) {
+				$local_figures_obj = clone($self);
+				$local_board       = clone( $self->{board} );
+				$local_figures_obj->set_board($local_board);
+
+				$self = $local_figures_obj;
+				my $added = $self->$method( $n, $m );
+
+				if ($added) {
+					$self->{$figure}--;
+					$self->{placed}++;
+					$run_deeply = 1;
+					last;
+				}
 			}
 		}
 	}
 
-	return $run_deeply;
+	return ( $run_deeply, $local_figures_obj, $local_board );
 }
 
 sub is_possible_place_queen {
 	my ( $self, $n, $m ) = @_;
 
-    return 0 if $self->{board}->[$n]->[$m] || defined $self->{board}->[$n]->[$m];
+	return 0 if $self->{board}->[$n]->[$m] || defined $self->{board}->[$n]->[$m];
 
 	my $possible = 1;
 	$possible = $self->is_possible_place_rook( $n, $m ) if $possible;
