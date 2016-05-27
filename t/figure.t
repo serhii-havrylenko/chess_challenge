@@ -143,45 +143,51 @@ $figure_obj->{queen}  = 1;
 $figure_obj->{bishop} = 1;
 $figure_obj->{rook}   = 1;
 $figure_obj->{knight} = 1;
-ok( $figure_obj->place_figure( 2, 0 ), 'Place figure on 3x1' );
+my ( $ok, $local_figures_obj, $local_board ) = $figure_obj->place_figure( 2, 1 );
+ok( $ok, 'Place figure on 3x2' );
 is_deeply(
-	$figure_obj->{board},
-	[ [ 'K', '0', 'K' ], [ '0', '0', '0' ], [ 'N', undef, undef ] ],
-	'Board after placing figure on 3x1'
-);
-is( $figure_obj->{knight}, 0, 'Decrease number of knights after placing on board' );
-
-ok( $figure_obj->place_figure( 2, 1 ), 'Place figure on 3x2' );
-is_deeply(
-	$figure_obj->{board},
-	[ [ 'K', '0', 'K' ], [ '0', '0', '0' ], [ 'N', 'B', undef ] ],
-	'Board after placing figure on 3x2'
-);
-is( $figure_obj->{bishop}, 0, 'Decrease number of bishops after placing on board' );
-
-$figure_obj->{board} = clone($board_with_kings);
-ok( $figure_obj->place_figure( 2, 1 ), 'Place figure on 3x2' );
-is_deeply(
-	$figure_obj->{board},
+	$local_board,
 	[ [ 'K', '0', 'K' ], [ '0', '0', '0' ], [ '0', 'Q', '0' ] ],
 	'Board after placing figure on 3x2'
 );
-is( $figure_obj->{queen}, 0, 'Decrease number of queens after placing on board' );
+is( $local_figures_obj->{queen}, 0, 'Decrease number of queens after placing on board' );
 
-$figure_obj->{board} = clone($board_with_kings);
-ok( $figure_obj->place_figure( 2, 1 ), 'Place figure on 3x2' );
+$local_figures_obj->{board} = clone($board_with_kings);
+( $ok, $local_figures_obj, $local_board ) = $local_figures_obj->place_figure( 2, 1 );
+ok( $ok, 'Place figure on 3x2' );
 is_deeply(
-	$figure_obj->{board},
+	$local_board,
 	[ [ 'K', '0', 'K' ], [ '0', '0', '0' ], [ '0', 'R', '0' ] ],
 	'Board after placing figure on 3x2'
 );
-is( $figure_obj->{rook}, 0, 'Decrease number of rooks after placing on board' );
+is( $local_figures_obj->{rook}, 0, 'Decrease number of rooks after placing on board' );
 
-$figure_obj->{board} = clone($board_with_kings);
-ok( !$figure_obj->exist_figures, 'Figures exist return false for empty list' );
-is( $figure_obj->place_figure( 2, 1 ), undef, 'Place figure on 3x2' );
+$local_figures_obj->{board} = clone($board_with_kings);
+( $ok, $local_figures_obj, $local_board ) = $local_figures_obj->place_figure( 2, 1 );
+ok( $ok, 'Place figure on 3x2' );
 is_deeply(
-	$figure_obj->{board},
+	$local_board,
+	[ [ 'K', '0', 'K' ], [ '0', '0', '0' ], [ undef, 'B', undef ] ],
+	'Board after placing figure on 3x2'
+);
+is( $local_figures_obj->{bishop}, 0, 'Decrease number of bishops after placing on board' );
+
+$local_figures_obj->{board} = clone($board_with_kings);
+( $ok, $local_figures_obj, $local_board ) = $local_figures_obj->place_figure( 2, 0 );
+ok( $ok, 'Place figure on 3x1' );
+is_deeply(
+	$local_board,
+	[ [ 'K', '0', 'K' ], [ '0', '0', '0' ], [ 'N', undef, undef ] ],
+	'Board after placing figure on 3x1'
+);
+is( $local_figures_obj->{knight}, 0, 'Decrease number of knights after placing on board' );
+
+$local_figures_obj->{board} = clone($board_with_kings);
+ok( !$local_figures_obj->exist_figures, 'Figures exist return false for empty list' );
+( $ok, $local_figures_obj, $local_board ) = $local_figures_obj->place_figure( 2, 0 );
+is( $ok, undef, 'Place figure on 3x2' );
+is_deeply(
+	$local_figures_obj->{board},
 	[ [ 'K', '0', 'K' ], [ '0', '0', '0' ], [ undef, undef, undef ] ],
 	'Board after calling place figure with empty list of figures'
 );

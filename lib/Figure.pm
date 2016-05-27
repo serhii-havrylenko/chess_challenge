@@ -3,6 +3,7 @@ package Figure;
 use strict;
 use warnings;
 
+use Data::Dumper;
 use Clone 'clone';
 
 sub new {
@@ -33,6 +34,7 @@ sub place_figure {
 	my ( $self, $n, $m ) = @_;
 
 	my ( $local_figures_obj, $local_board, $run_deeply, $added ) = ( $self, $self->{board} );
+	$self->{start_from_current} = 0;
 
 	foreach my $figure (qw/queen rook bishop knight king/) {
 		if ( $self->{$figure} && $self->{$figure} > 0 ) {
@@ -51,12 +53,13 @@ sub place_figure {
 					$self->{$figure}--;
 					$self->{placed}++;
 					$run_deeply = 1;
+					$self->{start_from_current} = 1 if $self->{$figure} > 0;
 					last;
 				}
 			}
-            else {
-                last;
-            }
+			else {
+				last;
+			}
 		}
 	}
 

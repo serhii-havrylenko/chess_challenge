@@ -74,27 +74,33 @@ WAIT_THREADS: while (1) {
 }
 
 sub place_figures {
-	my ( $self, $figure_obj, $board ) = @_;
+	my ( $self, $figure_obj, $board, $start_n ) = @_;
 
-	foreach my $n ( 0 .. $self->{vertical} ) {
+	$start_n ||= 0;
+
+	foreach my $n ( $start_n .. $self->{vertical} ) {
 		foreach my $m ( 0 .. $self->{horizontal} ) {
 			next if $board->[$n]->[$m] || defined $board->[$n]->[$m];
-
-			# my $local_figures_obj = clone($figure_obj);
-			# my $local_board       = clone($board);
-			# $local_figures_obj->set_board($local_board);
 
 			my ( $run_deeply, $local_figures_obj, $local_board ) = $figure_obj->place_figure( $n, $m );
 
 			if ($run_deeply) {
+				if ( $local_figures_obj->{start_from_current} ) {
+					$start_n = $n;
+				}
+				else {
+					$start_n = 0;
+				}
+
 				if (   $local_figures_obj->{placed} < 2
 					&& threads->list(threads::running) < $self->{max_threads}
 					&& $local_figures_obj->exist_figures() )
 				{
-					threads->create( sub { $self->place_figures( $local_figures_obj, $local_board ) } );
+					threads->create(
+						sub { $self->place_figures( $local_figures_obj, $local_board, $start_n ) } );
 				}
 				elsif ( $local_figures_obj->exist_figures() ) {
-					$self->place_figures( $local_figures_obj, $local_board );
+					$self->place_figures( $local_figures_obj, $local_board, $start_n );
 				}
 			}
 
