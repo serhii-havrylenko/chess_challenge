@@ -42,17 +42,6 @@ sub place_all_figures {
 
 	$self->place_figures( $figure_obj, $board );
 
-	threads->create(
-		sub {
-			# sleep(2);
-			while (1) {
-				do { lock @results; @results = uniq @results; };
-				threads->exit(0) if threads->list(threads::running) < 3;
-				sleep(2);
-			}
-		}
-	)->join();
-
 WAIT_THREADS: while (1) {
 		my $threads = threads->list(threads::running);
 		if ( $threads == 0 ) {
