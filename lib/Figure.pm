@@ -54,6 +54,9 @@ sub place_figure {
 					last;
 				}
 			}
+            else {
+                last;
+            }
 		}
 	}
 
