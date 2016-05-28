@@ -2,16 +2,14 @@ package Board;
 
 use strict;
 use warnings;
-use threads;
-use threads::shared;
 
 use Digest::MD5 qw(md5);
 use List::MoreUtils qw(uniq);
 use Data::Dumper;
 use Clone 'clone';
 
-my @results : shared;
-my @debug_results : shared;
+my @results;
+my @debug_results;
 
 sub new {
 	my ( $class, $args ) = @_;
@@ -21,7 +19,7 @@ sub new {
 		vertical      => $args->{vertical} - 1,
 		horizontal    => $args->{horizontal} - 1,
 		debug         => $args->{debug},
-		max_threads   => 50,
+		max_threads   => 1,
 		results       => undef,
 		debug_results => undef,
 	}, $class;
@@ -41,28 +39,6 @@ sub place_all_figures {
 	my ( $self, $figure_obj, $board ) = @_;
 
 	$self->place_figures( $figure_obj, $board );
-
-	threads->create(
-		sub {
-			# sleep(2);
-			while (1) {
-				do { lock @results; @results = uniq @results; };
-				threads->exit(0) if threads->list(threads::running) < 3;
-				sleep(2);
-			}
-		}
-	)->join();
-
-WAIT_THREADS: while (1) {
-		my $threads = threads->list(threads::running);
-		if ( $threads == 0 ) {
-			my @threads = threads->list();
-			$_->detach() foreach @threads;
-
-			last WAIT_THREADS;
-		}
-		sleep(1);
-	}
 
 	$self->{results}       = [@results];
 	$self->{debug_results} = [@debug_results];
@@ -92,14 +68,7 @@ sub place_figures {
 					$start_n = 0;
 				}
 
-				if (   $local_figures_obj->{placed} < 2
-					&& threads->list(threads::running) < $self->{max_threads}
-					&& $local_figures_obj->exist_figures() )
-				{
-					threads->create(
-						sub { $self->place_figures( $local_figures_obj, $local_board, $start_n ) } );
-				}
-				elsif ( $local_figures_obj->exist_figures() ) {
+				if ( $local_figures_obj->exist_figures() ) {
 					$self->place_figures( $local_figures_obj, $local_board, $start_n );
 				}
 			}
@@ -107,9 +76,14 @@ sub place_figures {
 			# save board and return
 			unless ( $local_figures_obj->exist_figures() ) {
 				my $board_str = $self->write_board($local_board);
-				lock @results;
 				push @results, $board_str;
 			}
+
+			if ( $run_deeply && $local_figures_obj->exist_figures() ) {
+				undef %$local_figures_obj;
+				undef @$local_board;
+			}
+
 		}
 	}
 
