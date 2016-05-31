@@ -84,9 +84,9 @@ sub place_queen {
 
 	my $possible = $self->is_possible_place_queen( $n, $m );
 	if ($possible) {
-		$self->place_rook( $n, $m );
-		$self->place_bishop( $n, $m );
-		$self->place_king( $n, $m );
+		$self->place_rook( $n, $m, 1 );
+		$self->place_bishop( $n, $m, 1 );
+		$self->place_king( $n, $m, 1 );
 
 		$self->{board}->[$n]->[$m] = 'Q';
 
@@ -176,10 +176,10 @@ sub is_possible_place_bishop {
 }
 
 sub place_bishop {
-	my ( $self, $n, $m ) = @_;
+	my ( $self, $n, $m, $force ) = @_;
 
 	my $possible = $self->is_possible_place_bishop( $n, $m );
-	if ($possible) {
+	if ( $force || $possible ) {
 		my $j = 1;
 		for ( my $i = $n - 1; $i >= 0; $i-- ) {
 			$self->{board}->[$i]->[ $m - $j ] = '0' if $m - $j >= 0 && !defined $self->{board}->[$i]->[ $m - $j ];
@@ -221,10 +221,10 @@ sub is_possible_place_rook {
 }
 
 sub place_rook {
-	my ( $self, $n, $m ) = @_;
+	my ( $self, $n, $m, $force ) = @_;
 
 	my $possible = $self->is_possible_place_rook( $n, $m );
-	if ($possible) {
+	if ( $force || $possible ) {
 		foreach my $i ( 0 .. $self->{horizontal} ) {
 			$self->{board}->[$n]->[$i] = '0' unless defined $self->{board}->[$n]->[$i];
 		}
@@ -275,10 +275,10 @@ sub is_possible_place_king {
 }
 
 sub place_king {
-	my ( $self, $n, $m ) = @_;
+	my ( $self, $n, $m, $force ) = @_;
 
 	my $possible = $self->is_possible_place_king( $n, $m );
-	if ($possible) {
+	if ( $force || $possible ) {
 		$self->{board}->[$n]->[$m] = 'K';
 		$self->{board}->[ $n - 1 ]->[ $m - 1 ] = '0'
 			if $n > 0 && $m > 0 && !defined $self->{board}->[ $n - 1 ]->[ $m - 1 ];
